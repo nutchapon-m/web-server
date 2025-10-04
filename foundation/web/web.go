@@ -38,21 +38,15 @@ type App struct {
 	mux     *http.ServeMux
 	mw      []MidFunc
 	origins []string
-	paths   map[string]bool
 }
 
 func NewApp(log Logger, mw ...MidFunc) *App {
 	mux := http.NewServeMux()
 	return &App{
-		mux:   mux,
-		log:   log,
-		mw:    mw,
-		paths: make(map[string]bool),
+		mux: mux,
+		log: log,
+		mw:  mw,
 	}
-}
-
-func (a *App) pathRegister(path string) {
-	a.paths[path] = true
 }
 
 func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -70,12 +64,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
 
-	if _, ok := a.paths[r.URL.Path]; ok {
-		a.mux.ServeHTTP(w, r)
-		return
-	}
-
-	http.NotFound(w, r)
+	a.mux.ServeHTTP(w, r)
 }
 
 func (a *App) EnableCORS(origins []string) {
@@ -94,8 +83,10 @@ func (a *App) HandlerFunc(method, group, path string, handler HandlerFunc, mw ..
 		}
 
 		ctx := setWriter(r.Context(), w)
-		response := handler(ctx, r)
-		if err := Respond(ctx, w, response); err != nil {
+
+		resp := handler(ctx, r)
+
+		if err := Respond(ctx, w, resp); err != nil {
 			a.log(ctx, "web-response")
 			return
 		}
@@ -106,6 +97,5 @@ func (a *App) HandlerFunc(method, group, path string, handler HandlerFunc, mw ..
 		pattern = group + path
 	}
 
-	a.pathRegister(pattern)
 	a.mux.HandleFunc(pattern, h)
 }

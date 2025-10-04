@@ -66,11 +66,11 @@ func Routes() add {
 type add struct{}
 
 func (add) Add(app *web.App, cfg mux.Config) {
-	app.HandlerFunc(http.MethodGet, "", "/test", func(ctx context.Context, r *http.Request) web.Encoder {
+	app.HandlerFunc(http.MethodGet, "/api", "/test", func(ctx context.Context, r *http.Request) web.Encoder {
 		return web.JSON(http.StatusOK, map[string]any{"ok": true, "path": r.URL.Path})
 	})
 
-	app.HandlerFunc(http.MethodPost, "", "/", func(ctx context.Context, r *http.Request) web.Encoder {
+	app.HandlerFunc(http.MethodPost, "/api", "/user", func(ctx context.Context, r *http.Request) web.Encoder {
 		return web.JSON(http.StatusOK, map[string]any{"ok": true, "path": r.URL.Path})
 	})
 }
