@@ -2,20 +2,42 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
 	"github.com/nutchapon-m/web-server/app/sdk/errs"
 	"github.com/nutchapon-m/web-server/app/sdk/mux"
+	"github.com/nutchapon-m/web-server/foundation/env"
 	"github.com/nutchapon-m/web-server/foundation/logger"
 	"github.com/nutchapon-m/web-server/foundation/web"
 )
 
+var (
+	build = flag.String("mode", "develop", "Service running on mode: develop or release")
+	port  = flag.String("port", "8000", "Service port")
+)
+
 func main() {
-	log := logger.New(os.Stdout, logger.LevelInfo, "TEST")
+	// -------------------------------------------------------------------------
+	// Flag on start service
+
+	flag.Parse()
+
+	// -------------------------------------------------------------------------
+	// Load ENV
+
+	env.Load(".", "config.yml")
+
+	// -------------------------------------------------------------------------
+	// Start service
+
+	log := logger.New(os.Stdout, logger.LevelInfo, "WEB-API")
 	ctx := context.Background()
 	if err := run(ctx, log); err != nil {
 		log.Error(ctx, "startup", "err", err)
@@ -24,11 +46,26 @@ func main() {
 }
 
 func run(ctx context.Context, log *logger.Logger) error {
+	// -------------------------------------------------------------------------
+	// GOMAXPROCS
+
+	log.Info(ctx, "startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
+
+	// -------------------------------------------------------------------------
+	// Configuration
+
 	cfg := mux.Config{
-		Log: log,
+		Build: *build,
+		Log:   log,
 	}
 
-	addr := "localhost:8000"
+	var addr string
+	if *build == "develop" {
+		addr = fmt.Sprintf("localhost:%s", *port)
+	} else {
+		addr = fmt.Sprintf(":%s", *port)
+	}
+
 	server := http.Server{
 		Addr:         addr,
 		Handler:      mux.WebAPI(cfg, buildRoutes()),
@@ -50,6 +87,11 @@ func run(ctx context.Context, log *logger.Logger) error {
 	}()
 
 	<-shutdown
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Error(ctx, "shutdown error", "err", err)
+	}
+
 	log.Info(ctx, "shutdown")
 	return nil
 }
@@ -67,6 +109,7 @@ func Routes() add {
 type add struct{}
 
 func (add) Add(app *web.App, cfg mux.Config) {
+
 	app.HandlerFunc(http.MethodGet, "/api", "/test", func(ctx context.Context, r *http.Request) web.Encoder {
 		return web.JSON(http.StatusOK, map[string]any{"ok": true, "path": r.URL.Path})
 	})
@@ -76,7 +119,7 @@ func (add) Add(app *web.App, cfg mux.Config) {
 	})
 
 	app.HandlerFunc(http.MethodGet, "/api", "/csrf", func(ctx context.Context, r *http.Request) web.Encoder {
-		tok, err := web.CSRFToken(r)
+		tok, err := web.CSRF(r)
 		if err != nil {
 			return errs.Newf(errs.Internal, "Error from get csrf token")
 		}
@@ -84,4 +127,5 @@ func (add) Add(app *web.App, cfg mux.Config) {
 		value := web.Get[int](ctx, "nut")
 		return web.JSON(http.StatusOK, map[string]any{"ok": true, "csrf": tok, "nut": value})
 	})
+
 }

@@ -22,7 +22,51 @@ func (NoResponse) Encode() ([]byte, string, error) {
 	return nil, "", nil
 }
 
-// =============================================================================
+// JSONResponse is a simple encoder for returning JSON payloads.
+type JSONResponse struct {
+	Status int
+	Data   any
+}
+
+func JSON(status int, data any) JSONResponse {
+	return JSONResponse{Status: status, Data: data}
+}
+
+func (j JSONResponse) HTTPStatus() int { return j.Status }
+
+func (j JSONResponse) Encode() ([]byte, string, error) {
+	if j.Data == nil {
+		return nil, "application/json", nil
+	}
+
+	b, err := json.Marshal(j.Data)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return b, "application/json; charset=utf-8", nil
+}
+
+// Response HTML
+type HTMLResponse struct {
+	Data string
+}
+
+func HTML(html string) HTMLResponse {
+	return HTMLResponse{Data: html}
+}
+
+func (html HTMLResponse) HTTPStatus() int { return http.StatusOK }
+
+func (html HTMLResponse) Encode() ([]byte, string, error) {
+	if html.Data == "" {
+		return nil, "text/html", nil
+	}
+
+	return []byte(html.Data), "text/html; charset=UTF-8", nil
+}
+
+// =====================================================================================================================
 
 type httpStatus interface {
 	HTTPStatus() int
@@ -76,29 +120,4 @@ func Respond(ctx context.Context, w http.ResponseWriter, resp Encoder) error {
 	}
 
 	return nil
-}
-
-// JSONResponse is a simple encoder for returning JSON payloads.
-type JSONResponse struct {
-	Status int
-	Data   any
-}
-
-func JSON(status int, data any) JSONResponse {
-	return JSONResponse{Status: status, Data: data}
-}
-
-func (j JSONResponse) HTTPStatus() int { return j.Status }
-
-func (j JSONResponse) Encode() ([]byte, string, error) {
-	if j.Data == nil {
-		return nil, "application/json", nil
-	}
-
-	b, err := json.Marshal(j.Data)
-	if err != nil {
-		return nil, "", err
-	}
-
-	return b, "application/json; charset=utf-8", nil
 }
