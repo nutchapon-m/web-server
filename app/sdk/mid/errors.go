@@ -13,8 +13,8 @@ import (
 
 // Errors handles errors coming out of the call chain.
 func Errors(log *logger.Logger) web.MidFunc {
-	m := func(next web.HandlerFunc) web.HandlerFunc {
-		h := func(ctx context.Context, r *http.Request) web.Encoder {
+	return func(next web.HandlerFunc) web.HandlerFunc {
+		return func(ctx context.Context, r *http.Request) web.Encoder {
 			resp := next(ctx, r)
 			err := isError(resp)
 			if err == nil {
@@ -40,9 +40,5 @@ func Errors(log *logger.Logger) web.MidFunc {
 
 			return appErr
 		}
-
-		return h
 	}
-
-	return m
 }

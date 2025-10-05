@@ -14,8 +14,8 @@ import (
 
 // Logger writes information about the request to the logs.
 func Logger(log *logger.Logger) web.MidFunc {
-	m := func(next web.HandlerFunc) web.HandlerFunc {
-		h := func(ctx context.Context, r *http.Request) web.Encoder {
+	return func(next web.HandlerFunc) web.HandlerFunc {
+		return func(ctx context.Context, r *http.Request) web.Encoder {
 			now := time.Now()
 
 			path := r.URL.Path
@@ -42,9 +42,5 @@ func Logger(log *logger.Logger) web.MidFunc {
 
 			return resp
 		}
-
-		return h
 	}
-
-	return m
 }

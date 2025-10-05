@@ -41,3 +41,12 @@ func Decode(r *http.Request, v Decoder) error {
 
 	return nil
 }
+
+// Get CSRF token from request cookies
+func CSRFToken(r *http.Request) (string, error) {
+	tok, err := r.Cookie("csrftoken")
+	if err != nil {
+		return "", err
+	}
+	return tok.Value, nil
+}

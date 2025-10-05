@@ -35,6 +35,7 @@ func WebAPI(cfg Config, routeAdder RouteAdder, options ...func(opts *Options)) h
 		mid.Logger(cfg.Log),
 		mid.Errors(cfg.Log),
 		mid.Panics(),
+		mid.CSRF(),
 	)
 
 	var opts Options

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/nutchapon-m/web-server/app/sdk/errs"
 	"github.com/nutchapon-m/web-server/app/sdk/mux"
 	"github.com/nutchapon-m/web-server/foundation/logger"
 	"github.com/nutchapon-m/web-server/foundation/web"
@@ -72,5 +73,15 @@ func (add) Add(app *web.App, cfg mux.Config) {
 
 	app.HandlerFunc(http.MethodPost, "/api", "/user", func(ctx context.Context, r *http.Request) web.Encoder {
 		return web.JSON(http.StatusOK, map[string]any{"ok": true, "path": r.URL.Path})
+	})
+
+	app.HandlerFunc(http.MethodGet, "/api", "/csrf", func(ctx context.Context, r *http.Request) web.Encoder {
+		tok, err := web.CSRFToken(r)
+		if err != nil {
+			return errs.Newf(errs.Internal, "Error from get csrf token")
+		}
+
+		value := web.Get[int](ctx, "nut")
+		return web.JSON(http.StatusOK, map[string]any{"ok": true, "csrf": tok, "nut": value})
 	})
 }
