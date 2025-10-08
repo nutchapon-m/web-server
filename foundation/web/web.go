@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	AllowMethods = []string{
+	allowMethods = []string{
 		http.MethodGet,
 		http.MethodOptions,
 		http.MethodPost,
@@ -15,7 +15,7 @@ var (
 		http.MethodPut,
 		http.MethodDelete,
 	}
-	AllowHeaders = []string{
+	allowHeaders = []string{
 		"Accept",
 		"Content-Type",
 		"Content-Length",
@@ -23,6 +23,7 @@ var (
 		"X-CSRF-Token",
 		"Authorization",
 	}
+	exposeHeader = []string{}
 )
 
 type Encoder interface {
@@ -58,9 +59,22 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-		w.Header().Set("Access-Control-Allow-Methods", strings.Join(AllowMethods, ", "))
-		w.Header().Set("Access-Control-Allow-Headers", strings.Join(AllowHeaders, ", "))
+
+		w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowMethods, ", "))
+		w.Header().Set("Access-Control-Allow-Headers", strings.Join(allowHeaders, ", "))
+		w.Header().Set("Access-Control-Expose-Headers", strings.Join(exposeHeader, ", "))
 		w.Header().Set("Access-Control-Max-Age", "86400")
+
+		if r.Method != http.MethodOptions {
+			w.Header().Set("Vary", "Origin")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		} else {
+			w.Header().Set("Vary", "Origin")
+			w.Header().Set("Vary", "Access-Control-Request-Method")
+			w.Header().Set("Vary", "Access-Control-Allow-Headers")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 	}
 	w.Header().Set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
 
