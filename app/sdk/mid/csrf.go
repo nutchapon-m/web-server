@@ -27,18 +27,16 @@ func CSRF() web.MidFunc {
 
 			val := r.Header.Get(csrfTokenKey)
 
-			var appErr *errs.Error
 			if val == "" {
 				return errs.Newf(errs.PermissionDenied, "The csrf token is required")
 			}
 
-			key := fmt.Sprintf("ua:csrftoken:%s", val)
-			if _, exsits := storer[key]; exsits {
-				return next(ctx, r)
+			key := fmt.Sprintf("ua:%s:csrftoken:%s", r.UserAgent(), val)
+			if _, exsits := storer[key]; !exsits {
+				return errs.Newf(errs.PermissionDenied, "Invalid csrf token")
 			}
 
-			appErr = errs.Newf(errs.PermissionDenied, "Invalid csrf token")
-			return appErr
+			return next(ctx, r)
 		}
 	}
 }
