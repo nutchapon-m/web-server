@@ -10,7 +10,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var limiter = rate.NewLimiter(rate.Every(time.Second), 5)
+var limiter = rate.NewLimiter(rate.Every(10*time.Second), 5)
 
 func Limiter() web.MidFunc {
 	return func(next web.HandlerFunc) web.HandlerFunc {
