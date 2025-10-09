@@ -16,6 +16,11 @@ func isError(e web.Encoder) error {
 		if errors.As(err, &appErr) && appErr.Code == errs.None {
 			return nil
 		}
+
+		var fieldErr *errs.FieldErrors
+		if errors.As(err, &fieldErr) && fieldErr.Code == errs.None {
+			return nil
+		}
 		return err
 	}
 	return nil
