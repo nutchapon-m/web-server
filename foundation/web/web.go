@@ -63,11 +63,11 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Methods", strings.Join(allowMethods, ", "))
 		w.Header().Set("Access-Control-Allow-Headers", strings.Join(allowHeaders, ", "))
 		w.Header().Set("Access-Control-Expose-Headers", strings.Join(exposeHeader, ", "))
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 
 		if r.Method != http.MethodOptions {
 			w.Header().Set("Vary", "Origin")
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
 		} else {
 			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Vary", "Access-Control-Request-Method")
