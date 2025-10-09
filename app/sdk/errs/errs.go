@@ -122,31 +122,30 @@ type FieldError struct {
 }
 
 // FieldErrors represents a collection of field errors.
-type FieldErrors []FieldError
+type FieldErrors struct {
+	Code     ErrCode      `json:"code"`
+	Messages []FieldError `json:"messages"`
+	FuncName string       `json:"-"`
+	FileName string       `json:"-"`
+}
 
 // NewFieldErrors creates a field errors.
-func NewFieldErrors(field string, err error) *Error {
-	fe := FieldErrors{
-		{
-			Field: field,
-			Err:   err.Error(),
-		},
+func NewFieldErrors(code ErrCode, err ...FieldError) *FieldErrors {
+	pc, filename, line, _ := runtime.Caller(1)
+	return &FieldErrors{
+		Code:     code,
+		Messages: err,
+		FuncName: runtime.FuncForPC(pc).Name(),
+		FileName: fmt.Sprintf("%s:%d", filename, line),
 	}
-
-	return fe.ToError()
 }
 
 // Add adds a field error to the collection.
 func (fe *FieldErrors) Add(field string, err error) {
-	*fe = append(*fe, FieldError{
+	fe.Messages = append(fe.Messages, FieldError{
 		Field: field,
 		Err:   err.Error(),
 	})
-}
-
-// ToError converts the field errors to an Error.
-func (fe FieldErrors) ToError() *Error {
-	return New(InvalidArgument, fe)
 }
 
 // Error implements the error interface.
@@ -156,4 +155,16 @@ func (fe FieldErrors) Error() string {
 		return err.Error()
 	}
 	return string(d)
+}
+
+// Encode implements the encoder interface.
+func (fe *FieldErrors) Encode() ([]byte, string, error) {
+	data, err := json.Marshal(fe)
+	return data, "application/json", err
+}
+
+// HTTPStatus implements the web package httpStatus interface so the
+// web framework can use the correct http status.
+func (fe *FieldErrors) HTTPStatus() int {
+	return httpStatus[fe.Code]
 }

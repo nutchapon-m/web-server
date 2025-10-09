@@ -112,6 +112,8 @@ type add struct{}
 func (add) Add(app *web.App, cfg mux.Config) {
 
 	app.HandlerFunc(http.MethodGet, "/api", "/test-error", func(ctx context.Context, r *http.Request) web.Encoder {
-		return errs.NewFieldErrors("value", errors.New("field value is required"))
+		fieldErr := errs.NewFieldErrors(errs.InvalidArgument)
+		fieldErr.Add("value", errors.New("field value is required"))
+		return fieldErr
 	})
 }
